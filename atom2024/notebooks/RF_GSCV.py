@@ -33,7 +33,12 @@ sys.path.append('../')
 # import utils
 from sklearn.model_selection import GridSearchCV
 from VisUtils import *
-
+def calculate_metrics(y_true, y_pred): 
+    tp = np.sum((y_true == 1) & (y_pred == 1))
+    tn = np.sum((y_true == 0) & (y_pred == 0))
+    fp = np.sum((y_true == 0) & (y_pred == 1))
+    fn = np.sum((y_true == 1) & (y_pred == 0))
+    return tp, tn, fp, fn
 
 def rf_results(model, train_x, train_y, test_x, test_y): 
     """Make predictions adn get probabilities
@@ -48,10 +53,30 @@ def rf_results(model, train_x, train_y, test_x, test_y):
     test_pred = model.predict(test_x)
     train_acc = accuracy_score(train_y, train_pred) 
     test_acc = accuracy_score(test_y, test_pred) 
-    # print(f'train accuracy: {train_acc}')
-    # print(f'test accuracy: {test_acc}')
+    
+    precision_train = precision_score(train_y, train_pred)
+    precision_test = precision_score(test_y, test_pred)
+
+    recall_train = recall_score(train_y, train_pred)
+    recall_test = recall_score(test_y, test_pred)
+
+    tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
+    tp_test, tn_test, fp_test, fn_test = calculate_metrics(train_y, train_pred)
+    sensitivity_train = tp_train / (tp_train  + fn_train)
+    sensitivity_test = tp_test / (tp_train  + fn_train)
+
+
+    specificity_train = tn_train / (tn_train  + fp_train)
+    specificity_test = tn_test / (tn_train  + fp_train)
+
     train_prob = model.predict_proba(train_x) 
     test_prob = model.predict_proba(test_x) 
+
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
+
+    
+
     return train_pred, test_pred, train_acc, test_acc, train_prob, test_prob
 
 def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type):
