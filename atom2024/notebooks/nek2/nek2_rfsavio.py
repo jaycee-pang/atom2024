@@ -55,6 +55,7 @@ def rf_results(model, train_x, train_y, test_x, test_y):
     test_pred = model.predict(test_x)
     train_acc = accuracy_score(train_y, train_pred) 
     test_acc = accuracy_score(test_y, test_pred) 
+ 
     # print(f'train accuracy: {train_acc}')
     # print(f'test accuracy: {test_acc}')
     train_prob = model.predict_proba(train_x) 
@@ -71,27 +72,27 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
     dataset_type: binding or inhibition
     @returns: dict with model, train/test prections and probabilities
     """
-    # n_estimators = parameters.get('n_estimators', 100)
-    # random_state = parameters.get('random_state', 42) 
-    # criterion = parameters.get('criterion', 'gini')
-    # max_depth = parameters.get('max_depth', 100)
-    # min_samples_split = parameters.get('min_samples_split', 2) 
-    # min_samples_leaf = parameters.get('min_samples_leaf', 1) 
-    # bootstrap = parameters.get('bootstrap', False) 
-    # max_features = parameters.get('max_features', None) 
-    # class_weight = parameters.get('class_weight', None)
+    n_estimators = parameters.get('n_estimators', 100)
+    random_state = parameters.get('random_state', 42) 
+    criterion = parameters.get('criterion', 'gini')
+    max_depth = parameters.get('max_depth', 100)
+    min_samples_split = parameters.get('min_samples_split', 2) 
+    min_samples_leaf = parameters.get('min_samples_leaf', 1) 
+    bootstrap = parameters.get('bootstrap', False) 
+    max_features = parameters.get('max_features', None) 
+    class_weight = parameters.get('class_weight', None)
     
-    # if (rf_type == 'balanced class_weight'): 
-    #     model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-    #                             , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
-    # elif (rf_type == 'balanced RF'):
-    #     model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-    #                             , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-    # else:
-    #     model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-    #                             , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
+    if (rf_type == 'balanced class_weight'): 
+        model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
+    elif (rf_type == 'balanced RF'):
+        model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
+    else:
+        model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
 
-    model = RandomForestClassifier()  
+    # model = RandomForestClassifier()  
     model.fit(train_x, train_y)
     train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(model, train_x, train_y, test_x, test_y)
     classes = ['0','1']
@@ -149,10 +150,10 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
     
 if __name__ == "__main__": 
     split_path = '../../../../data/NEK_data_4Berkeley/NEK2/'
-    train_x_df = pd.read_csv(split_path+"/NEK2_binding_random_fold1_trainX.csv")
-    train_y_df= pd.read_csv(split_path+"/NEK2_binding_random_fold1_trainY.csv")
-    test_x_df= pd.read_csv(split_path+"/NEK2_binding_random_fold1_testX.csv")
-    test_y_df= pd.read_csv(split_path+"/NEK2_binding_random_fold1_testY.csv")
+    train_x_df = pd.read_csv(split_path+"/NEK2_inhibition_random_fold1_trainX.csv")
+    train_y_df= pd.read_csv(split_path+"/NEK2_inhibition_random_fold1_trainY.csv")
+    test_x_df= pd.read_csv(split_path+"/NEK2_inhibition_random_fold1_testX.csv")
+    test_y_df= pd.read_csv(split_path+"/NEK2_inhibition_random_fold1_testY.csv")
     train_x = torch.from_numpy(train_x_df.to_numpy())
     train_y = torch.from_numpy(train_y_df.to_numpy().reshape(-1))
     test_x = torch.from_numpy(test_x_df.to_numpy())
