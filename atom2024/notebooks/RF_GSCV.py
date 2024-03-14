@@ -34,6 +34,19 @@ sys.path.append('../')
 # import utils
 from sklearn.model_selection import GridSearchCV
 from VisUtils import *
+from functools import wraps
+from time import time
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print('func:%r  took: %2.4f sec' % (f.__name__,  te-ts))
+        return result
+    return wrap
+    
 def calculate_metrics(y_true, y_pred): 
     tp = np.sum((y_true == 1) & (y_pred == 1))
     tn = np.sum((y_true == 0) & (y_pred == 0))
@@ -79,7 +92,7 @@ def rf_results(model, train_x, train_y, test_x, test_y):
     
 
     return train_pred, test_pred, train_acc, test_acc, train_prob, test_prob
-
+@timing
 def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type):
     """Fit a RF model, make predictions, get probabilities
     @params: 
@@ -119,7 +132,7 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
     
     return {'model': model, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
 
-
+@timing
 def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, param_dist, dataset_type, save_filename, verbose_val=None):
     """uses GridSearchCV not random grid search
     Grid search to find the best model, make predictions (train and test), get probability (train and test), and plot CM 
