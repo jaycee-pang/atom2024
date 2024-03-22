@@ -235,3 +235,51 @@ def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_fea
     plt.legend()
     plt.show();
 
+
+# def save_temp(model, )
+
+def rf_results2(model, train_x, train_y, test_x, test_y): 
+    """Make predictions adn get probabilities
+    @params
+    model: fitted model (fitted to train set)
+    train_x, train_y, test_x, test_y: train and test set inputs (np arrays)
+    @returns dict 
+    train/test predictions
+    train/test accuracies 
+    train/test probabilities"""
+    train_pred = model.predict(train_x) 
+    test_pred = model.predict(test_x)
+    train_acc = accuracy_score(train_y, train_pred) 
+    test_acc = accuracy_score(test_y, test_pred) 
+    
+    precision_train = precision_score(train_y, train_pred)
+    precision_test = precision_score(test_y, test_pred)
+
+    recall_train = recall_score(train_y, train_pred)
+    recall_test = recall_score(test_y, test_pred)
+
+    tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
+    tp_test, tn_test, fp_test, fn_test = calculate_metrics(test_y, test_pred)
+    sensitivity_train = tp_train / (tp_train  + fn_train)
+    sensitivity_test = tp_test / (tp_test + fn_test)
+
+
+    specificity_train = tn_train / (tn_train  + fp_train)
+    specificity_test = tn_test / (tn_test + fp_test)
+
+    train_prob = model.predict_proba(train_x) 
+    test_prob = model.predict_proba(test_x) 
+
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
+
+    
+
+    return {'train_pred':train_pred, 'test_pred':test_pred,
+            'train_acc':train_acc, 'test_acc':test_acc,
+            'train_prob':train_prob, 'test_prob':test_prob, 
+            'train_acc': train_acc, 'test_acc': test_acc,
+            'train_prec':precision_train, 'test_prec': precision_test, 
+            'train_recall': recall_train, 'test_recall': recall_test, 
+            'train_sensitivity': sensitivity_train, 'test_sensitivity': sensitivity_test,
+            'train_specificity': specificity_train, 'test_specificity': specificity_test}
