@@ -8,7 +8,8 @@ import os
 import pickle
 import shutil
 import matplotlib 
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
+
 from matplotlib import pyplot as plt
 import sklearn
 from sklearn.model_selection import KFold
@@ -61,13 +62,13 @@ def rf_results(model, train_x, train_y, test_x, test_y):
     recall_test = recall_score(test_y, test_pred)
 
     tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
-    tp_test, tn_test, fp_test, fn_test = calculate_metrics(train_y, train_pred)
+    tp_test, tn_test, fp_test, fn_test = calculate_metrics(test_y, test_pred)
     sensitivity_train = tp_train / (tp_train  + fn_train)
-    sensitivity_test = tp_test / (tp_train  + fn_train)
+    sensitivity_test = tp_test / (tp_test + fn_test)
 
 
     specificity_train = tn_train / (tn_train  + fp_train)
-    specificity_test = tn_test / (tn_train  + fp_train)
+    specificity_test = tn_test / (tn_test + fp_test)
 
     train_prob = model.predict_proba(train_x) 
     test_prob = model.predict_proba(test_x) 
@@ -108,8 +109,8 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
     else:
         model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
                                 , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-
-    model = RandomForestClassifier()  
+    
+    # model = RandomForestClassifier()  
     model.fit(train_x, train_y)
     train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(model, train_x, train_y, test_x, test_y)
     classes = ['0','1']
@@ -163,4 +164,122 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
 
 
     return {'best_model': best_rf, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
-  
+def save_model(best_model, save_file): 
+    best_params = best_model.get_params()
+    for param, value in best_params.items():
+        print(f"{param}: {value}")
+    # train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(best_model, train_x, train_y, test_x, test_y)
+
+    # plot_confusion_matrix(train_y, train_pred, classes, title=f"Best NEK2 Binding Train: Basic RF")
+    # plot_confusion_matrix(test_y, test_pred, classes, title=f"Best NEK2 Binding Test: Basic RF")
+    pklfile = save_file
+    with open(pklfile, 'wb') as f:
+        pickle.dump(best_model, f)
+
+def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_features, rf_type, parameters, dataset_type): 
+    """model_resuults is the dictionary with model, predictions, etc."""
+    train_aucs = []
+    test_aucs = []
+
+    for depth in max_depths:
+            parameters['max_depth'] = depth
+            results = rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type)
+            train_auc = roc_auc_score(train_y, results['train_pred'])
+            test_auc = roc_auc_score(test_y, results['test_pred'])
+            train_aucs.append(train_auc)
+            test_aucs.append(test_auc)
+
+    plt.plot(max_depths, train_aucs, label='Train AUC')
+    plt.plot(max_depths, test_aucs, label='Test AUC')
+    plt.xlabel('Tree Depth')
+    plt.ylabel('AUC Score')
+    plt.title('Tree Depth vs AUC Score')
+    plt.legend()
+    plt.show();
+
+    train_aucs_est = []
+    test_aucs_est = []
+
+    for estimators in n_estimators:
+        parameters['n_estimators'] = estimators
+        results = rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type)
+        train_auc_est = roc_auc_score(train_y, results['train_pred'])
+        test_auc_est = roc_auc_score(test_y, results['test_pred'])
+        train_aucs_est.append(train_auc_est)
+        test_aucs_est.append(test_auc_est)
+
+    plt.plot(n_estimators, train_aucs_est, label='Train AUC')
+    plt.plot(n_estimators, test_aucs_est, label='Test AUC')
+    plt.xlabel('Number of Estimators')
+    plt.ylabel('AUC Score')
+    plt.title('Number of Estimators vs AUC Score')
+    plt.legend()
+    plt.show();
+
+    train_aucs_feats = []
+    test_aucs_feats = []
+
+    for features in max_features:
+        parameters['max_features'] = features
+        results = rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type)
+        train_aucfeats = roc_auc_score(train_y, results['train_pred'])
+        test_auc_feats = roc_auc_score(test_y, results['test_pred'])
+        train_aucs_feats.append(train_aucs_feats)
+        test_aucs_feats.append(test_auc_feats)
+
+    plt.plot(max_features, train_aucs_feats, label='Train AUC')
+    plt.plot(max_features, test_aucs_feats, label='Test AUC')
+    plt.xlabel('Max Features')
+    plt.ylabel('AUC Score')
+    plt.title('Max Features vs AUC Score')
+    plt.legend()
+    plt.show();
+
+
+# def save_temp(model, )
+
+def rf_results2(model, train_x, train_y, test_x, test_y): 
+    """Make predictions adn get probabilities
+    @params
+    model: fitted model (fitted to train set)
+    train_x, train_y, test_x, test_y: train and test set inputs (np arrays)
+    @returns dict 
+    train/test predictions
+    train/test accuracies 
+    train/test probabilities"""
+    train_pred = model.predict(train_x) 
+    test_pred = model.predict(test_x)
+    train_acc = accuracy_score(train_y, train_pred) 
+    test_acc = accuracy_score(test_y, test_pred) 
+    
+    precision_train = precision_score(train_y, train_pred)
+    precision_test = precision_score(test_y, test_pred)
+
+    recall_train = recall_score(train_y, train_pred)
+    recall_test = recall_score(test_y, test_pred)
+
+    tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
+    tp_test, tn_test, fp_test, fn_test = calculate_metrics(test_y, test_pred)
+    sensitivity_train = tp_train / (tp_train  + fn_train)
+    sensitivity_test = tp_test / (tp_test + fn_test)
+
+
+    specificity_train = tn_train / (tn_train  + fp_train)
+    specificity_test = tn_test / (tn_test + fp_test)
+
+    train_prob = model.predict_proba(train_x) 
+    test_prob = model.predict_proba(test_x) 
+
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
+
+    
+
+    return {'train_pred':train_pred, 'test_pred':test_pred,
+            'train_acc':train_acc, 'test_acc':test_acc,
+            'train_prob':train_prob, 'test_prob':test_prob, 
+            'train_acc': train_acc, 'test_acc': test_acc,
+            'train_prec':precision_train, 'test_prec': precision_test, 
+            'train_recall': recall_train, 'test_recall': recall_test, 
+            'train_sensitivity': sensitivity_train, 'test_sensitivity': sensitivity_test,
+            'train_specificity': specificity_train, 'test_specificity': specificity_test}
