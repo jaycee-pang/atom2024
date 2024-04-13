@@ -286,4 +286,59 @@ def plot_prob_hist(probabilities, y_labels, title, bind_inhib):
     plt.yscale('log')
     plt.grid(True)
     plt.show(); 
+
+def plot_swarmplot(predictions, true_labels, observed_pred, title):
+    true_labels = true_labels.numpy()
+    
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+
+    data = {
+        'Variance': np.concatenate([var_tp, var_tn, var_fp, var_fn]),
+        'Category': ['TP'] * len(var_tp) + ['TN'] * len(var_tn) + ['FP'] * len(var_fp) + ['FN'] * len(var_fn)
+    }
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Variance', data=df)
+    plt.title(title)
+    plt.xlabel('Category')
+    plt.ylabel('Variance')
+    plt.show();
+
+
+def probabilities_vs_var(true_labels, probabilities, observed_pred,title, bind_inhib):
+    """Scatter plot of probabilities vs variance
+    probabilities: extracted from samples
+    """
+    idx_1 = np.where(true_labels == 1)[0]
+    idx_0 = np.where(true_labels == 0)[0]
+    fig_width = 10
+    fig_height = 8
+    fig, ax = plt.subplots(1,figsize=(fig_width, fig_height))
+    ax.scatter(probabilities.numpy()[1,][idx_1],
+               observed_pred.variance.numpy()[1,][idx_1],
+               label=bind_inhib, marker='^', s=80, alpha=0.75)
+
+    ax.scatter(probabilities.numpy()[1,][idx_0],
+               observed_pred.variance.numpy()[1,][idx_0],
+               label=f'No {bind_inhib}', marker='o', s=80, alpha=0.75)
+    
+    ax.set_xlabel(f'Prediction ({bind_inhib} probability)')
+    ax.set_ylabel(f'{bind_inhib} variance')
+    plt.title(title, fontsize=24)
+    plt.legend(fontsize=18)
+    
+    plt.show();
+
+    
+        
+    
                 
