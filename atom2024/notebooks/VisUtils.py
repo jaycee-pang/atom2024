@@ -209,11 +209,15 @@ def look_at_data(filepath):
 
 
 def plot_cm_dist_kdedensity(observed_pred, predictions, true_labels, title, max_yaxis): 
-    """Plot KDE density plot for each classification on CM: TP, FP, TN, FP"""
-    # predictions = predictions.numpy() 
+    """Plot KDE density plot for each classification on CM: TP, FP, TN, FP
+    observed_pred: likelihood, comes from likelihood(model(input))
+    predictions: class 0 or 1 predicted label, comes from model(input).loc.max(0)[1]
+    true_labels: 0 or 1 true labels 
+    title (str): plot title
+    max_yaxis: max density (so all subplots on same y axis)
+    """
+
     true_labels = true_labels.numpy()
-    # print(f'predictions shape: {predictions.shape}')
-    # print(f'true labels shape: {true_labels.shape}')
     
     true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
     true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
@@ -236,7 +240,6 @@ def plot_cm_dist_kdedensity(observed_pred, predictions, true_labels, title, max_
     sns.histplot(var_tp, kde=True,color='green', bins=10, stat='density')
     plt.title('True Positives',fontsize=12)
     plt.xlabel('Variance')
-    # plt.xlim(
     plt.ylim(0, max_y_lim)
 
     plt.subplot(2, 2, 1)
@@ -259,6 +262,28 @@ def plot_cm_dist_kdedensity(observed_pred, predictions, true_labels, title, max_
     
     plt.tight_layout()
     plt.suptitle(f'{title}', fontsize=16, y=1.05)
-
-
     plt.show();
+
+def plot_prob_hist(probabilities, y_labels, title, bind_inhib): 
+    """Histogram of prediction probabilities
+    probabilities (tensor): sample from output distribution, and transform to probabilities
+    y_labels: true labels 
+    title: plot title
+    bind_inhib (str): binding or inhibition for x axis label"""
+    fig_width = 10
+    fig_height = 8
+    
+    idx_1 = np.where(y_labels == 1)[0]
+    idx_0 = np.where(y_labels == 0)[0]
+    # Histogram predictions without error bars:
+    fig, ax = plt.subplots(1,figsize=(fig_width, fig_height))
+    ax.hist(probabilities.numpy()[1,][idx_1], histtype='step', linewidth=3, label='Binding')
+    ax.hist(probabilities.numpy()[1,][idx_0], histtype='step', linewidth=3, label='No binding')
+    ax.set_xlabel(f'Prediction ({bind_inhib} probability)')
+    ax.set_ylabel('Number of compounds (in log scale)')
+    plt.title(title, fontsize=24)
+    plt.legend(fontsize=18)
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show(); 
+                
