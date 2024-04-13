@@ -21,10 +21,10 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true, y_pred)]
+    # classes = classes[unique_labels(y_true, y_pred)]
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    
+    plt.figure(figsize=(6,4))
     fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
@@ -46,9 +46,9 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, 
         for j in range(cm.shape[1]):
             ax.text(j, i, format(cm[i, j], fmt),
                     ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black")
-    fig.tight_layout()
-    return ax
+                    color="white" if cm[i, j] > thresh else "black", fontsize=18)
+    fig.tight_layout();
+    # return ax
 
 # Plot Heatmap
 def plot_heatmap(data, title="Heatmap", xlabel="X-axis", ylabel="Y-axis"):
@@ -206,3 +206,59 @@ def look_at_data(filepath):
     counts_per_fold = df.groupby('fold')['active'].value_counts()
     print(counts_per_fold)
     return df
+
+
+def plot_cm_dist_kdedensity(observed_pred, predictions, true_labels, title, max_yaxis): 
+    """Plot KDE density plot for each classification on CM: TP, FP, TN, FP"""
+    # predictions = predictions.numpy() 
+    true_labels = true_labels.numpy()
+    # print(f'predictions shape: {predictions.shape}')
+    # print(f'true labels shape: {true_labels.shape}')
+    
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+    
+    # max_var = max(var_tp.max(), var_tn.max(), var_fp.max(), var_fn.max())
+    # min_var = min(var_tp.min(), var_tn.min(), var_fp.min(), var_fn.min())
+    max_y_lim = max_yaxis
+    plt.figure(figsize=(10, 10))
+    # to add same scale
+    # bins = np.linspace(0, max(max(var_tp), max(var_tn), max(var_fp), max(var_fn)), 50)
+    # bins = np.linspace(min_var, max_var, 50)
+    plt.subplot(2, 2, 4)
+    sns.histplot(var_tp, kde=True,color='green', bins=10, stat='density')
+    plt.title('True Positives',fontsize=12)
+    plt.xlabel('Variance')
+    # plt.xlim(
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 1)
+    sns.histplot(var_tn, kde=True,color='blue', bins=10, stat='density')
+    plt.title('True Negatives',fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 2)
+    sns.histplot(var_fp, kde=True,color='red', bins=10, stat='density')
+    plt.title('False Positives',fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 3)
+    sns.histplot(var_fn, kde=True, color='orange', bins=10, stat='density')
+    plt.title('False Negative', fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+    
+    plt.tight_layout()
+    plt.suptitle(f'{title}', fontsize=16, y=1.05)
+
+
+    plt.show();
