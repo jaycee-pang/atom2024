@@ -5,6 +5,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.utils.multiclass import unique_labels
 from sklearn.manifold import TSNE
 import pandas as pd
+from sklearn.metrics import precision_score, f1_score, roc_auc_score, roc_curve, precision_recall_curve, auc, recall_score, PrecisionRecallDisplay
 
 # Plot Confusion Matrix
 def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, cmap=plt.cm.Blues):
@@ -182,10 +183,9 @@ def plot_kde(observed_pred, title):
     sns.kdeplot(class1_var, label=f'Class 1')
     plt.xlabel('Variance')
     plt.ylabel('Density')
-    plt.title(f'Inhibition KDE Variances for Each Class - {title}')
+    plt.title(f'{title} KDE Variances for Each Class')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'nek2_inhib_kde_plot_{title}.png')
     plt.show();
 
 def look_at_data(filepath):
@@ -338,7 +338,45 @@ def probabilities_vs_var(true_labels, probabilities, observed_pred,title, bind_i
     
     plt.show();
 
+
+def swarm_prob(model, x_input, true_labels, title):
+    """Swarm plot of probabilities (I used it for the rf models)
+    model: rf model
+    x_input: x labels 
+    true_labels: matching y labels"""
+    predictions = model.predict(x_input)
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    prob = model.predict_proba(x_input)
+    a = prob[true_pos, 1]
+    b = prob[true_neg, 0]
+    c = prob[false_pos, 1]
+    d = prob[false_neg, 0]
+    data = {
+        'Probability': np.concatenate([a,b,c,d]),
+        'Category': ['TP'] * len(a) + ['TN'] * len(b) + ['FP'] * len(c) + ['FN'] * len(d)
+    }
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Probability', data=df)
+    plt.title(title)
+    plt.xlabel('Classification Type')
+    plt.ylabel('Probability')
+    plt.show();
     
+    
+
+def plot_prec_recall(true_labels, probabilities_class1, title):
+    precision, recall, thresholds = precision_recall_curve(true_labels, probabilities_class1)
+    plt.figure(figsize=(8,6))
+    display = PrecisionRecallDisplay(precision=precision, recall=recall)
+    display.plot()
+    plt.title(title)
+    plt.show();
         
     
                 
