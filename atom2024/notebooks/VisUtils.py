@@ -5,6 +5,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 from sklearn.utils.multiclass import unique_labels
 from sklearn.manifold import TSNE
 import pandas as pd
+from sklearn.metrics import precision_score, f1_score, roc_auc_score, roc_curve, precision_recall_curve, auc, recall_score, PrecisionRecallDisplay
 
 # Plot Confusion Matrix
 def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, cmap=plt.cm.Blues):
@@ -21,10 +22,10 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, 
     # Compute confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true, y_pred)]
+    # classes = classes[unique_labels(y_true, y_pred)]
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    
+    plt.figure(figsize=(6,4))
     fig, ax = plt.subplots()
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
@@ -46,9 +47,9 @@ def plot_confusion_matrix(y_true, y_pred, classes, normalize=False, title=None, 
         for j in range(cm.shape[1]):
             ax.text(j, i, format(cm[i, j], fmt),
                     ha="center", va="center",
-                    color="white" if cm[i, j] > thresh else "black")
-    fig.tight_layout()
-    return ax
+                    color="white" if cm[i, j] > thresh else "black", fontsize=18)
+    fig.tight_layout();
+    # return ax
 
 # Plot Heatmap
 def plot_heatmap(data, title="Heatmap", xlabel="X-axis", ylabel="Y-axis"):
@@ -182,10 +183,9 @@ def plot_kde(observed_pred, title):
     sns.kdeplot(class1_var, label=f'Class 1')
     plt.xlabel('Variance')
     plt.ylabel('Density')
-    plt.title(f'Inhibition KDE Variances for Each Class - {title}')
+    plt.title(f'{title} KDE Variances for Each Class')
     plt.legend()
     plt.grid(True)
-    plt.savefig(f'nek2_inhib_kde_plot_{title}.png')
     plt.show();
 
 def look_at_data(filepath):
@@ -206,3 +206,215 @@ def look_at_data(filepath):
     counts_per_fold = df.groupby('fold')['active'].value_counts()
     print(counts_per_fold)
     return df
+
+
+def plot_cm_dist_kdedensity(observed_pred, predictions, true_labels, title, max_yaxis): 
+    """Plot KDE density plot for each classification on CM: TP, FP, TN, FP
+    observed_pred: likelihood, comes from likelihood(model(input))
+    predictions: class 0 or 1 predicted label, comes from model(input).loc.max(0)[1]
+    true_labels: 0 or 1 true labels 
+    title (str): plot title
+    max_yaxis: max density (so all subplots on same y axis)
+    """
+
+    true_labels = true_labels.numpy()
+    
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+    
+    # max_var = max(var_tp.max(), var_tn.max(), var_fp.max(), var_fn.max())
+    # min_var = min(var_tp.min(), var_tn.min(), var_fp.min(), var_fn.min())
+    max_y_lim = max_yaxis
+    plt.figure(figsize=(10, 10))
+    # to add same scale
+    # bins = np.linspace(0, max(max(var_tp), max(var_tn), max(var_fp), max(var_fn)), 50)
+    # bins = np.linspace(min_var, max_var, 50)
+    plt.subplot(2, 2, 4)
+    sns.histplot(var_tp, kde=True,color='green', bins=10, stat='density')
+    plt.title('True Positives',fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 1)
+    sns.histplot(var_tn, kde=True,color='blue', bins=10, stat='density')
+    plt.title('True Negatives',fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 2)
+    sns.histplot(var_fp, kde=True,color='red', bins=10, stat='density')
+    plt.title('False Positives',fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+
+    plt.subplot(2, 2, 3)
+    sns.histplot(var_fn, kde=True, color='orange', bins=10, stat='density')
+    plt.title('False Negative', fontsize=12)
+    plt.xlabel('Variance')
+    plt.ylim(0, max_y_lim)
+    
+    plt.tight_layout()
+    plt.suptitle(f'{title}', fontsize=16, y=1.05)
+    plt.show();
+
+def plot_prob_hist(probabilities, y_labels, title, bind_inhib): 
+    """Histogram of prediction probabilities
+    probabilities (tensor): sample from output distribution, and transform to probabilities
+    y_labels: true labels 
+    title: plot title
+    bind_inhib (str): binding or inhibition for x axis label"""
+    fig_width = 10
+    fig_height = 8
+    
+    idx_1 = np.where(y_labels == 1)[0]
+    idx_0 = np.where(y_labels == 0)[0]
+    # Histogram predictions without error bars:
+    fig, ax = plt.subplots(1,figsize=(fig_width, fig_height))
+    ax.hist(probabilities.numpy()[1,][idx_1], histtype='step', linewidth=3, label='Binding')
+    ax.hist(probabilities.numpy()[1,][idx_0], histtype='step', linewidth=3, label='No binding')
+    ax.set_xlabel(f'Prediction ({bind_inhib} probability)')
+    ax.set_ylabel('Number of compounds (in log scale)')
+    plt.title(title, fontsize=24)
+    plt.legend(fontsize=18)
+    plt.yscale('log')
+    plt.grid(True)
+    plt.show(); 
+
+def plot_swarmplot(predictions, true_labels, observed_pred, title):
+    true_labels = true_labels.numpy()
+    
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+
+    data = {
+        'Variance': np.concatenate([var_tp, var_tn, var_fp, var_fn]),
+        'Category': ['TP'] * len(var_tp) + ['TN'] * len(var_tn) + ['FP'] * len(var_fp) + ['FN'] * len(var_fn)
+    }
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Variance', data=df)
+    plt.title(title)
+    plt.xlabel('Category')
+    plt.ylabel('Variance')
+    plt.show();
+
+
+def probabilities_vs_var(true_labels, probabilities, observed_pred,title, bind_inhib):
+    """Scatter plot of probabilities vs variance
+    probabilities: extracted from samples
+    """
+    idx_1 = np.where(true_labels == 1)[0]
+    idx_0 = np.where(true_labels == 0)[0]
+    fig_width = 10
+    fig_height = 8
+    fig, ax = plt.subplots(1,figsize=(fig_width, fig_height))
+    ax.scatter(probabilities.numpy()[1,][idx_1],
+               observed_pred.variance.numpy()[1,][idx_1],
+               label=bind_inhib, marker='^', s=80, alpha=0.75)
+
+    ax.scatter(probabilities.numpy()[1,][idx_0],
+               observed_pred.variance.numpy()[1,][idx_0],
+               label=f'No {bind_inhib}', marker='o', s=80, alpha=0.75)
+    
+    ax.set_xlabel(f'Prediction ({bind_inhib} probability)')
+    ax.set_ylabel(f'{bind_inhib} variance')
+    plt.title(title, fontsize=24)
+    plt.legend(fontsize=18)
+    
+    plt.show();
+
+
+def swarm_prob(model, x_input, true_labels, title):
+    """Swarm plot of probabilities (I used it for the rf models)
+    model: rf model
+    x_input: x labels 
+    true_labels: matching y labels"""
+    predictions = model.predict(x_input)
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    prob = model.predict_proba(x_input)
+    a = prob[true_pos, 1]
+    b = prob[true_neg, 0]
+    c = prob[false_pos, 1]
+    d = prob[false_neg, 0]
+    data = {
+        'Probability': np.concatenate([a,b,c,d]),
+        'Category': ['TP'] * len(a) + ['TN'] * len(b) + ['FP'] * len(c) + ['FN'] * len(d)
+    }
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Probability', data=df)
+    plt.title(title)
+    plt.xlabel('Classification Type')
+    plt.ylabel('Probability')
+    plt.show();
+    
+    
+
+def plot_prec_recall(true_labels, probabilities_class1, title):
+    precision, recall, thresholds = precision_recall_curve(true_labels, probabilities_class1)
+    plt.figure(figsize=(8,6))
+    display = PrecisionRecallDisplay(precision=precision, recall=recall)
+    display.plot()
+    plt.title(title)
+    plt.show();
+
+
+
+def swarm_by_var_and_prob(predictions, true_labels, observed_pred, probabilities, title):
+    true_labels = true_labels.numpy()
+   
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+    prob_class0 = probabilities.numpy()[0,]
+    prob_class1 = probabilities.numpy()[1,]
+    prob_tp = probabilities.numpy()[1,][true_pos]
+    prob_tn = probabilities.numpy()[0,][true_neg]
+    prob_fp = probabilities.numpy()[1,][false_pos]
+    prob_fn = probabilities.numpy()[0,][false_neg]
+    
+    
+
+    data = {
+        'Variance': np.concatenate([var_tp, var_tn, var_fp, var_fn]),
+        'Probability Class 0 or Class 1': np.concatenate([prob_tp, prob_tn, prob_fp, prob_fn]),
+        'Category': ['TP'] * len(var_tp) + ['TN'] * len(var_tn) + ['FP'] * len(var_fp) + ['FN'] * len(var_fn)
+    }
+
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Variance', data=df,hue='Probability Class 0 or Class 1')
+    plt.title(title)
+    plt.xlabel('Category')
+    plt.ylabel('Variance')
+    plt.show();
+        
+    
+                
