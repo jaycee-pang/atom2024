@@ -377,6 +377,44 @@ def plot_prec_recall(true_labels, probabilities_class1, title):
     display.plot()
     plt.title(title)
     plt.show();
+
+
+
+def swarm_by_var_and_prob(predictions, true_labels, observed_pred, probabilities, title):
+    true_labels = true_labels.numpy()
+   
+    true_pos = np.where((predictions == 1) & (true_labels == 1))[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0))[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0))[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1))[0] 
+
+    var_tp = observed_pred.variance[1, true_pos].numpy()
+    var_tn = observed_pred.variance[0, true_neg].numpy()
+    var_fp = observed_pred.variance[1, false_pos].numpy()
+    var_fn = observed_pred.variance[0, false_neg].numpy()
+    prob_class0 = probabilities.numpy()[0,]
+    prob_class1 = probabilities.numpy()[1,]
+    prob_tp = probabilities.numpy()[1,][true_pos]
+    prob_tn = probabilities.numpy()[0,][true_neg]
+    prob_fp = probabilities.numpy()[1,][false_pos]
+    prob_fn = probabilities.numpy()[0,][false_neg]
+    
+    
+
+    data = {
+        'Variance': np.concatenate([var_tp, var_tn, var_fp, var_fn]),
+        'Probability Class 0 or Class 1': np.concatenate([prob_tp, prob_tn, prob_fp, prob_fn]),
+        'Category': ['TP'] * len(var_tp) + ['TN'] * len(var_tn) + ['FP'] * len(var_fp) + ['FN'] * len(var_fn)
+    }
+
+
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='Variance', data=df,hue='Probability Class 0 or Class 1')
+    plt.title(title)
+    plt.xlabel('Category')
+    plt.ylabel('Variance')
+    plt.show();
         
     
                 
