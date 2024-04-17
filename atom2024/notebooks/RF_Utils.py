@@ -15,8 +15,6 @@ from sklearn.model_selection import KFold
 
 import imblearn as imb
 
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
 from sklearn.metrics import confusion_matrix
 import itertools
@@ -32,53 +30,34 @@ sys.path.append('../')
 # import utils
 from sklearn.model_selection import GridSearchCV
 from VisUtils import *
+
+
 def calculate_metrics(y_true, y_pred): 
+    """Counts of tp, tn, fp, fn"""
     tp = np.sum((y_true == 1) & (y_pred == 1))
     tn = np.sum((y_true == 0) & (y_pred == 0))
     fp = np.sum((y_true == 0) & (y_pred == 1))
     fn = np.sum((y_true == 1) & (y_pred == 0))
     return tp, tn, fp, fn
 
-def rf_results(model, train_x, train_y, test_x, test_y): 
-    """Make predictions adn get probabilities
+def rf_results(model, x_input, true_labels): 
+    """predictions and get metrics 
     @params
     model: fitted model (fitted to train set)
-    train_x, train_y, test_x, test_y: train and test set inputs (np arrays)
     @returns
-    train/test predictions
-    train/test accuracies 
-    train/test probabilities"""
-    train_pred = model.predict(train_x) 
-    test_pred = model.predict(test_x)
-    train_acc = accuracy_score(train_y, train_pred) 
-    test_acc = accuracy_score(test_y, test_pred) 
-    
-    precision_train = precision_score(train_y, train_pred)
-    precision_test = precision_score(test_y, test_pred)
+    dictionary of results and metrics"""
+    predictions = model.predict(x_input)
+    acc = accuracy_score(true_labels, predictions)
+    precision = precision_score(true_labels, predictions)
+    recall = recall_score(true_labels, predictions)
+    tp, tn, fp, fn = calculate_metrics(true_labels, predictions)
+    specificity = tn / (tn + fp)
+    probability = model.predict_proba(x_input)
+    # print(f'accuracy: {acc:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, specificity: {specificity:.3f}')
 
-    recall_train = recall_score(train_y, train_pred)
-    recall_test = recall_score(test_y, test_pred)
+    return {'predictions':predictions, 'accuracy':acc , 'precision': precision, 'recall':recall, 'specificity':specificity}
 
-    tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
-    tp_test, tn_test, fp_test, fn_test = calculate_metrics(test_y, test_pred)
-    sensitivity_train = tp_train / (tp_train  + fn_train)
-    sensitivity_test = tp_test / (tp_test + fn_test)
-
-
-    specificity_train = tn_train / (tn_train  + fp_train)
-    specificity_test = tn_test / (tn_test + fp_test)
-
-    train_prob = model.predict_proba(train_x) 
-    test_prob = model.predict_proba(test_x) 
-
-    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
-    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
-
-    
-
-    return train_pred, test_pred, train_acc, test_acc, train_prob, test_prob
-
-def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type):
+def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters):
     """Fit a RF model, make predictions, get probabilities
     @params: 
     train_x, train_y, test_x, test_y: train and test set inputs (np arrays) 
@@ -88,6 +67,7 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
     dataset_type: binding or inhibition
     @returns: dict with model, train/test prections and probabilities
     """
+
     n_estimators = parameters.get('n_estimators', 100)
     random_state = parameters.get('random_state', 42) 
     criterion = parameters.get('criterion', 'gini')
@@ -107,15 +87,14 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
     else:
         model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
                                 , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-    
-    # model = RandomForestClassifier()  
+
     model.fit(train_x, train_y)
-    train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(model, train_x, train_y, test_x, test_y)
+    model_results = rf_results2(model, train_x, train_y, test_x, test_y)
+
     classes = ['0','1']
-    # plot_confusion_matrix(train_y, train_pred, classes, title=f"NEK2 {dataset_type} Train: {rf_type}")
-    # plot_confusion_matrix(test_y, test_pred, classes, title=f"NEK2 {dataset_type} Test: {rf_type}")
     
-    return {'model': model, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
+    return {'model': model, 'train_pred':model_results['train_pred'], 'test_pred': model_results['test_pred'],
+             'train_prob':model_results['train_prob'], 'test_prob': model_results['test_prob']}
 
 
 def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, param_dist, dataset_type, save_filename, verbose_val=None):
@@ -152,30 +131,29 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
     else:
         model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
                                 , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-    # model = RandomForestClassifier()
+
     rand_search = GridSearchCV(estimator =model, param_grid = param_dist,cv=5, n_jobs=8, verbose=verbose_val)
     rand_search.fit(train_x, train_y) 
     best_rf = rand_search.best_estimator_
 
-    train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(best_rf, train_x, train_y, test_x, test_y)
+    model_results = rf_results2(best_rf, train_x, train_y, test_x, test_y)
     classes = ['0','1']
 
 
-    return {'best_model': best_rf, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
+    return {'best_model': best_rf, 'train_pred':model_results['train_pred'], 'test_pred': model_results['test_pred'],
+             'train_prob':model_results['train_prob'], 'test_prob': model_results['test_prob']}
+
 def save_model(best_model, save_file): 
+    """Save models to pickle file."""
     best_params = best_model.get_params()
     for param, value in best_params.items():
         print(f"{param}: {value}")
-    # train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(best_model, train_x, train_y, test_x, test_y)
-
-    # plot_confusion_matrix(train_y, train_pred, classes, title=f"Best NEK2 Binding Train: Basic RF")
-    # plot_confusion_matrix(test_y, test_pred, classes, title=f"Best NEK2 Binding Test: Basic RF")
     pklfile = save_file
     with open(pklfile, 'wb') as f:
         pickle.dump(best_model, f)
 
 def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_features, rf_type, parameters, dataset_type): 
-    """model_resuults is the dictionary with model, predictions, etc."""
+    """model_results is the dictionary with model, predictions, etc."""
     train_aucs = []
     test_aucs = []
 
@@ -234,10 +212,8 @@ def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_fea
     plt.show();
 
 
-# def save_temp(model, )
-
 def rf_results2(model, train_x, train_y, test_x, test_y): 
-    """Make predictions adn get probabilities
+    """Make predictions adn get probabilities (for train and test)
     @params
     model: fitted model (fitted to train set)
     train_x, train_y, test_x, test_y: train and test set inputs (np arrays)
@@ -268,8 +244,8 @@ def rf_results2(model, train_x, train_y, test_x, test_y):
     train_prob = model.predict_proba(train_x) 
     test_prob = model.predict_proba(test_x) 
 
-    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
-    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, specificity: {specificity_train:.3f}')
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, specificity: {specificity_test:.3f}')
 
     
 
@@ -279,5 +255,24 @@ def rf_results2(model, train_x, train_y, test_x, test_y):
             'train_acc': train_acc, 'test_acc': test_acc,
             'train_prec':precision_train, 'test_prec': precision_test, 
             'train_recall': recall_train, 'test_recall': recall_test, 
-            'train_sensitivity': sensitivity_train, 'test_sensitivity': sensitivity_test,
             'train_specificity': specificity_train, 'test_specificity': specificity_test}
+
+def save_rf_results(model, x_input, true_labels):
+    """Save rf model results to DF"""
+    results = rf_results(model, x_input, true_labels)
+    results_df = pd.DataFrame(results)
+    results_df['y'] = true_labels
+    results_df['prob_class0'] = model.predict_proba(x_input)[:,0] 
+    results_df['prob_class1'] = model.predict_proba(x_input)[:,1] 
+    return results_df 
+
+def calculate_indicies(y_pred, y_true): 
+    tp = np.where((y_pred == 1) & (y_true == 1))[0]
+    fp = np.where((y_pred == 1) & (y_true == 0))[0]
+    tn = np.where((y_pred == 0) & (y_true == 0))[0]
+    fn = np.where((y_pred == 0) & (y_true == 1))[0]
+    
+
+    return {'TP': tp, 'FP': fp, 'TN': tn, 'FN': fn}
+
+
