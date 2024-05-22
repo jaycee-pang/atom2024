@@ -41,7 +41,11 @@ def calculate_metrics(y_true, y_pred):
     fn = np.sum((y_true == 1) & (y_pred == 0))
     return tp, tn, fp, fn
 
-def rf_results(model, train_x, train_y, test_x, test_y): 
+def specificity_score(tn, fp):
+    val = (tn/(tn+fp))
+    return val
+
+def rf_results(model, x_input, y_labels): 
     """Make predictions adn get probabilities
     @params
     model: fitted model (fitted to train set)
@@ -50,37 +54,18 @@ def rf_results(model, train_x, train_y, test_x, test_y):
     train/test predictions
     train/test accuracies 
     train/test probabilities"""
-    train_pred = model.predict(train_x) 
-    test_pred = model.predict(test_x)
-    train_acc = accuracy_score(train_y, train_pred) 
-    test_acc = accuracy_score(test_y, test_pred) 
-    
-    precision_train = precision_score(train_y, train_pred)
-    precision_test = precision_score(test_y, test_pred)
+    pred = model.predict(x_input)
+    tp, tn, fp, fn = calculate_metrics(y_labels, pred)
+    acc = accuracy_score(y_labels, pred)
+    precision = precision_score(y_labels, pred)
+    recall = recall_score(y_labels, pred)
+    specificity = specificity_score(tn, fp)
+    prob = model.predict(x_input)
 
-    recall_train = recall_score(train_y, train_pred)
-    recall_test = recall_score(test_y, test_pred)
+    print(f'accuracy: {acc:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, specificity: {specificity:.3f}')
+    return pred, acc, precision, recall, specificity, prob
 
-    tp_train, tn_train, fp_train, fn_train = calculate_metrics(train_y, train_pred)
-    tp_test, tn_test, fp_test, fn_test = calculate_metrics(test_y, test_pred)
-    sensitivity_train = tp_train / (tp_train  + fn_train)
-    sensitivity_test = tp_test / (tp_test + fn_test)
-
-
-    specificity_train = tn_train / (tn_train  + fp_train)
-    specificity_test = tn_test / (tn_test + fp_test)
-
-    train_prob = model.predict_proba(train_x) 
-    test_prob = model.predict_proba(test_x) 
-
-    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
-    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
-
-    
-
-    return train_pred, test_pred, train_acc, test_acc, train_prob, test_prob
-
-def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_type):
+def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters):
     """Fit a RF model, make predictions, get probabilities
     @params: 
     train_x, train_y, test_x, test_y: train and test set inputs (np arrays) 
@@ -110,17 +95,20 @@ def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters, dataset_typ
         model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
                                 , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
     
-    # model = RandomForestClassifier()  
     model.fit(train_x, train_y)
-    train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(model, train_x, train_y, test_x, test_y)
-    classes = ['0','1']
-    # plot_confusion_matrix(train_y, train_pred, classes, title=f"NEK2 {dataset_type} Train: {rf_type}")
-    # plot_confusion_matrix(test_y, test_pred, classes, title=f"NEK2 {dataset_type} Test: {rf_type}")
-    
-    return {'model': model, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
+    # train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(model, train_x, train_y, test_x, test_y)
+    train_pred, train_acc, train_precision, train_recall, train_specificity, train_prob = rf_results(model, train_x, train_y)
+    test_pred, test_acc, test_precision, test_recall, test_specificity, test_prob = rf_results(model, test_x, test_y)
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {train_precision:.3f}, recall: {train_recall:.3f}, specificity: {train_specificity:.3f}')
+
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {test_precision:.3f}, recall: {test_recall:.3f}, specificity: {test_specificity:.3f}')
 
 
-def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, param_dist, dataset_type, save_filename, verbose_val=None):
+    return {'model': model, 'train_pred':train_pred, 'test_pred': test_pred,
+             'train_prob':train_prob, 'test_prob': test_prob}
+
+
+def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, param_dist,  verbose_val=None):
     """uses GridSearchCV not random grid search
     Grid search to find the best model, make predictions (train and test), get probability (train and test), and plot CM 
     Save best model to pickle file 
@@ -159,19 +147,15 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
     rand_search.fit(train_x, train_y) 
     best_rf = rand_search.best_estimator_
 
-    train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(best_rf, train_x, train_y, test_x, test_y)
-    classes = ['0','1']
-
+    train_pred, train_acc, train_precision, train_recall, train_specificity, train_prob = rf_results(best_rf, train_x, train_y)
+    test_pred, test_acc, test_precision, test_recall, test_specificity, test_prob = rf_results(best_rf, test_x, test_y)
 
     return {'best_model': best_rf, 'train_pred':train_pred, 'test_pred': test_pred, 'train_prob':train_prob, 'test_prob': test_prob}
+
 def save_model(best_model, save_file): 
     best_params = best_model.get_params()
     for param, value in best_params.items():
         print(f"{param}: {value}")
-    # train_pred, test_pred, train_acc, test_acc, train_prob, test_prob = rf_results(best_model, train_x, train_y, test_x, test_y)
-
-    # plot_confusion_matrix(train_y, train_pred, classes, title=f"Best NEK2 Binding Train: Basic RF")
-    # plot_confusion_matrix(test_y, test_pred, classes, title=f"Best NEK2 Binding Test: Basic RF")
     pklfile = save_file
     with open(pklfile, 'wb') as f:
         pickle.dump(best_model, f)
@@ -236,7 +220,6 @@ def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_fea
     plt.show();
 
 
-# def save_temp(model, )
 
 def rf_results2(model, train_x, train_y, test_x, test_y): 
     """Make predictions adn get probabilities
@@ -270,8 +253,8 @@ def rf_results2(model, train_x, train_y, test_x, test_y):
     train_prob = model.predict_proba(train_x) 
     test_prob = model.predict_proba(test_x) 
 
-    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f}, sensitivity: {sensitivity_train:.3f}, specificity: {specificity_train:.3f}')
-    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, sensitivity: {sensitivity_test:.3f}, specificity: {specificity_test:.3f}')
+    print(f'TRAIN: accuracy: {train_acc:.3f}, precision: {precision_train:.3f}, recall: {recall_train:.3f},  specificity: {specificity_train:.3f}')
+    print(f'TEST: accuracy: {test_acc:.3f}, precision: {precision_test:.3f}, recall: {recall_test:.3f}, specificity: {specificity_test:.3f}')
 
     
 
