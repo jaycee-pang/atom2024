@@ -122,8 +122,8 @@ def plot_cm_dist_kde(y_true, y_pred_prob, title="KDE for Confusion Matrix Distri
     """
     Plots Kernel Density Estimation (KDE) for true positives and false positives.
     """
-    sns.kdeplot(y_pred_prob[y_true == 1], label='True Positives', shade=True)
-    sns.kdeplot(y_pred_prob[y_true == 0], label='False Positives', shade=True)
+    sns.kdeplot(y_pred_prob[y_true == 1], label='True Positives', fill=True)
+    sns.kdeplot(y_pred_prob[y_true == 0], label='False Positives', fill=True)
     plt.title(title)
     plt.xlabel('Predicted Probability')
     plt.ylabel('Density')
@@ -400,7 +400,6 @@ def swarm_by_var_and_prob(predictions, true_labels, observed_pred, probabilities
     prob_fn = probabilities.numpy()[0,][false_neg]
     
     
-
     data = {
         'Variance': np.concatenate([var_tp, var_tn, var_fp, var_fn]),
         'Probability Class 0 or Class 1': np.concatenate([prob_tp, prob_tn, prob_fp, prob_fn]),
