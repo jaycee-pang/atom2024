@@ -60,9 +60,9 @@ def rf_results(model, x_input, y_labels):
     precision = precision_score(y_labels, pred)
     recall = recall_score(y_labels, pred)
     specificity = specificity_score(tn, fp)
-    prob = model.predict(x_input)
+    prob = model.predict_proba(x_input)
 
-    print(f'accuracy: {acc:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, specificity: {specificity:.3f}')
+    # print(f'accuracy: {acc:.3f}, precision: {precision:.3f}, recall: {recall:.3f}, specificity: {specificity:.3f}')
     return pred, acc, precision, recall, specificity, prob
 
 def rf_models(train_x, train_y, test_x, test_y, rf_type, parameters):
@@ -266,3 +266,25 @@ def rf_results2(model, train_x, train_y, test_x, test_y):
             'train_recall': recall_train, 'test_recall': recall_test, 
             'train_sensitivity': sensitivity_train, 'test_sensitivity': sensitivity_test,
             'train_specificity': specificity_train, 'test_specificity': specificity_test}
+
+
+def save_rf_results(model, x_input, true_labels):
+    """Save rf model results to DF"""
+    # results = rf_results(model, x_input, true_labels)
+    pred, acc, precision, recall, specificity, prob = rf_results(model, x_input, true_labels)
+    # results_df = pd.DataFrame(results)
+    results = {
+        'prediction': pred,
+        'accuracy': acc,
+        'precision': precision,
+        'recall': recall,
+        'specificity': specificity,
+        'prob_class0': prob[:, 0],
+        'prob_class1': prob[:, 1]
+    }
+    results_df = pd.DataFrame(results)
+    results_df['y'] = true_labels
+    # results_df['prob_class0'] = model.predict_proba(x_input)[:,0] 
+    # results_df['prob_class1'] = model.predict_proba(x_input)[:,1] 
+    return results_df 
+

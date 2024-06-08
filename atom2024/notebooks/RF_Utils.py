@@ -143,14 +143,6 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
     return {'best_model': best_rf, 'train_pred':model_results['train_pred'], 'test_pred': model_results['test_pred'],
              'train_prob':model_results['train_prob'], 'test_prob': model_results['test_prob']}
 
-def save_model(best_model, save_file): 
-    """Save models to pickle file."""
-    best_params = best_model.get_params()
-    for param, value in best_params.items():
-        print(f"{param}: {value}")
-    pklfile = save_file
-    with open(pklfile, 'wb') as f:
-        pickle.dump(best_model, f)
 
 def rf_plots(train_x, train_y, test_x, test_y, max_depths, n_estimators, max_features, rf_type, parameters, dataset_type): 
     """model_results is the dictionary with model, predictions, etc."""
