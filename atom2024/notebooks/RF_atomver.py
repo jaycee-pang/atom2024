@@ -148,39 +148,32 @@ def find_best_models(train_x, train_y, test_x, test_y, rf_type, parameters, para
     @returns: dict with model, train/test prections and probabilities
     """
     n_estimators = parameters.get('n_estimators', 100)
-    random_state = parameters.get('random_state', 42) 
+    random_state = parameters.get('random_state', None) 
     criterion = parameters.get('criterion', 'gini')
-    max_depth = parameters.get('max_depth', 100)
-    min_samples_split = parameters.get('min_samples_split', 2) 
+    max_depth = parameters.get('max_depth', None)
+    min_samples_split = parameters.get('min_samples_split',2 ) 
     min_samples_leaf = parameters.get('min_samples_leaf', 1) 
-    bootstrap = parameters.get('bootstrap', False) 
+    bootstrap = parameters.get('bootstrap', True) 
     max_features = parameters.get('max_features', None) 
     class_weight = parameters.get('class_weight', None)
-    bootstrap = parameters.get('bootstrap', False)
+    bootstrap = parameters.get('bootstrap', True)
     if (verbose_val==None): 
         verbose_val = 0
     if (rf_type == 'RF'): 
-        # model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-        #                         , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
+        model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
         model = RandomForestClassifier()
     elif (rf_type == 'RF_BCW'): 
-        # model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-        #                         , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
+        model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
         model = RandomForestClassifier()
     elif (rf_type == 'BRFC'):
-        # model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-        #                         , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-        model = BalancedRandomForestClassifier()
+        model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
     elif (rf_type == 'BRFC_BCW'): 
-        # model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-        #                         , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
-        model = BalancedRandomForestClassifier()
+        model = BalancedRandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
+                                , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight='balanced')
 
-    else:
-        # model = RandomForestClassifier(n_estimators=n_estimators, criterion=criterion, max_depth=max_depth, min_samples_split=min_samples_split
-        #                         , min_samples_leaf=min_samples_leaf, bootstrap=bootstrap, max_features=max_features, class_weight=class_weight)
-        model = RandomForestClassifier()
-    
 
     rand_search = GridSearchCV(estimator =model, param_grid = param_dist,cv=5, n_jobs=8, verbose=verbose_val)
     rand_search.fit(train_x, train_y) 

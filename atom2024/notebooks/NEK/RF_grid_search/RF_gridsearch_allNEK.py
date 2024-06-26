@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
-import pickle
+import pickle 
 import sklearn
 
 import imblearn as imb
@@ -72,12 +72,13 @@ if __name__ == '__main__':
         'class_weight':[ None, 'balanced','balanced_subsample']
 
     } 
+
 nek_list = ["2", "3", "5", "9"]
 nektype = ['binding','inhibition']
 feat_types = ['moe', 'mfp']
-samplings = ['scaled', 'UNDER' , 'SMOTE']
-model_types = ['RF','BRFC']
-
+samplings = ['scaled', 'UNDER' , 'SMOTE', 'ADASYN']
+model_types = ['RF','RF_BCW', 'BRFC', 'BRFC_BCW']
+count = 0 
 for n in nek_list:
     for i in nektype: 
         if i == 'inhibition' and n in ['3', '5']:
@@ -92,28 +93,29 @@ for n in nek_list:
                         data_path = f'/Users/jayceepang/msse/capstone/atom2024/atom2024/notebooks/NEK/NEK{n}/inhib/'
                     
                     df_name = f'NEK{n}_{i}_{j}_{k}_df.csv'
- 
+                    count+=1
                     trainX, trainy, testX, testy = get_arrays(data_path, df_name)
-                    grid_search = find_best_models(trainX, trainy, testX, testy, l, {}, grid_1, verbose_val=2)
-                
+                    # grid_search = find_best_models(trainX, trainy, testX, testy, l, {}, grid_1, verbose_val=2)
+
                     model_name = f'NEK{n}_{i}_{j}_{k}_{l}_GS'
-                    print(model_name)
+                    print(f'{count}. {model_name}')
                     
-                    with open(f'{model_name}.pkl', 'rb') as f:
-                        pickle.dump(grid_search, f)  
+                    # with open(f'{model_name}.pkl', 'rb') as f:
+                    #     pickle.dump(grid_search, f)  
                   
                     if n in ['2', '9'] and i == 'inhibition': 
                         data_path = f'/Users/jayceepang/msse/capstone/atom2024/atom2024/notebooks/NEK/NEK{n}/inhib/'
                         df_name = f'NEK{n}_{i}_{j}_{k}_df.csv'
         
                         trainX, trainy, testX, testy = get_arrays(data_path, df_name)
-                        grid_search = find_best_models(trainX, trainy, testX, testy, l, {}, grid_1, verbose_val=2)
-                    
+
+                        # grid_search = find_best_models(trainX, trainy, testX, testy, l, {}, grid_1, verbose_val=2)
+                        count+=1
                         model_name = f'NEK{n}_{i}_{j}_{k}_{l}_GS'
-                        print(model_name)
+                        print(f'{count}. {model_name}')
                         
-                        with open(f'{model_name}.pkl', 'rb') as f:
-                            pickle.dump(grid_search, f)   
+                        # with open(f'{model_name}.pkl', 'rb') as f:
+                        #     pickle.dump(grid_search, f)   
   
 
 
