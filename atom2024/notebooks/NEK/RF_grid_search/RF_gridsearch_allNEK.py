@@ -60,7 +60,7 @@ if __name__ == '__main__':
     grid_2 = {
         'n_estimators': np.linspace(100, 2000, 5, dtype=int),
         'criterion': ['gini','entropy'],
-        'max_features': ['7, 17, 27, 36, 46, 56, 100, 300, 685, 2048'],
+        'max_features': [7, 17, 27, 36, 46, 56, 100, 300, 685, 2048]
 
     }
     neks = ['NEK2_binding', 'NEK2_inhibition', 'NEK3_binding', 'NEK5_binding', 'NEK9_binding', 'NEK9_inhibition'] 
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                             df_name = f'NEK{n}_{i}_{feat}_{samp}_df.csv'
                             count+=1
                             trainX, trainy, testX, testy = get_arrays(data_path, df_name)
-                            grid_search = find_best_models(trainX, trainy, testX, testy, rf, {}, grid_1, verbose_val=2)
+                            grid_search = find_best_models(trainX, trainy, testX, testy, rf, {}, grid_2, verbose_val=2)
         
                             model_name = f'NEK{n}_{i}_{feat}_{samp}_{rf}_GS'
                             print(f'{count}. {model_name}')
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                             df_name = f'NEK{n}_{i}_{feat}_{samp}_df.csv'
                             trainX, trainy, testX, testy = get_arrays(data_path, df_name)
         
-                            grid_search = find_best_models(trainX, trainy, testX, testy, rf, {}, grid_1, verbose_val=2)
+                            grid_search = find_best_models(trainX, trainy, testX, testy, rf, {}, grid_2, verbose_val=2)
                             count+=1
                             model_name = f'NEK{n}_{i}_{feat}_{samp}_{rf}_GS'
                             print(f'{count}. {model_name}')
