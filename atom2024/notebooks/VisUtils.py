@@ -416,4 +416,63 @@ def swarm_by_var_and_prob(predictions, true_labels, observed_pred, probabilities
     plt.show();
         
     
-                
+def swarm_stdprob_RF(predictions, x_input, true_labels, std1, std0, title=None):
+    # predictions = model.predict(x_input)
+    true_pos = np.where((predictions == 1) & (true_labels == 1).flatten())[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0).flatten())[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0).flatten())[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1).flatten())[0] 
+    # std0 = test_proba0_df.std(axis=1)
+    # std1 = test_proba1_df.std(axis=1)
+    a = std1[true_pos]
+    b = std0[true_neg]
+    c = std1[false_pos]
+    d = std1[false_neg]
+    data = {
+        'std of probabilities': np.concatenate([a,b,c,d]),
+        'Category': ['TP'] * len(a) + ['TN'] * len(b) + ['FP'] * len(c) + ['FN'] * len(d)
+    }
+    
+    df = pd.DataFrame(data)
+    plt.figure(figsize=(10, 6))
+    sns.swarmplot(x='Category', y='std of probabilities', data=df)
+    
+    plt.title(title)
+    plt.xlabel('Classification Type')
+    plt.ylabel('std of tree probability')
+    plt.show();
+
+def get_swarm_data(predictions, true_labels, std1, std0, set_name):
+    true_pos = np.where((predictions == 1) & (true_labels == 1).flatten())[0] 
+    true_neg = np.where((predictions == 0) & (true_labels == 0).flatten())[0]
+    false_pos = np.where((predictions == 1) & (true_labels == 0).flatten())[0] 
+    false_neg = np.where((predictions == 0) & (true_labels == 1).flatten())[0] 
+    a = std1[true_pos]
+    b = std0[true_neg]
+    c = std1[false_pos]
+    d = std1[false_neg]
+
+    
+    data = {
+        'std of probabilities': np.concatenate([a,b,c,d]),
+        'Category': ['TP'] * len(a) + ['TN'] * len(b) + ['FP'] * len(c) + ['FN'] * len(d),
+        'Set': [set_name] * (len(a) + len(b) + len(c) + len(d))
+    }
+    return pd.DataFrame(data)
+def plot_swarm_std_prob_RF(df, figure_path, title):
+    "for one plot at a time"
+
+    plt.figure(figsize=(10, 6))
+    category_order = ['TP', 'TN', 'FP', 'FN']
+    color={'moe':'mediumpurple' ,'mfp':'paleredviolet'}
+    color_palette2 = sns.color_palette('Accent',n_colors=2)
+    sns.swarmplot(x='Category', y='std of probabilities', hue='Set', data=df,dodge=True,palette=color_palette2,order=category_order)
+    plt.ylim(0,0.5)
+    plt.xlabel(category_order)
+    plt.title(title)
+    plt.xlabel('Classification Type')
+    
+    plt.ylabel('std of tree probability')
+    # plt.legend(title)
+    plt.savefig(f'{figure_path}{title}.png')
+    plt.show();
