@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
 import itertools
 
-from scipy.stats import 
+# from scipy.stats
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import accuracy_score, precision_score, f1_score, roc_auc_score, roc_curve, precision_recall_curve, auc, recall_score, confusion_matrix
 
@@ -35,11 +35,22 @@ sys.path.append('../')
 from sklearn.model_selection import GridSearchCV
 
 def calculate_metrics(y_true, y_pred): 
+    
+    # tp = np.sum((y_true == 1) & (y_pred == 1))
+    # tn = np.sum((y_true == 0) & (y_pred == 0))
+    # fp = np.sum((y_true == 0) & (y_pred == 1))
+    # fn = np.sum((y_true == 1) & (y_pred == 0))
+    # return tp, tn, fp, fn
+    y_true = pd.Series(y_true) if not isinstance(y_true, pd.Series) else y_true
+    y_pred = pd.Series(y_pred) if not isinstance(y_pred, pd.Series) else y_pred
+    
     tp = np.sum((y_true == 1) & (y_pred == 1))
     tn = np.sum((y_true == 0) & (y_pred == 0))
     fp = np.sum((y_true == 0) & (y_pred == 1))
     fn = np.sum((y_true == 1) & (y_pred == 0))
+    
     return tp, tn, fp, fn
+    
 def prediction_type(y_true, y_pred): 
     if (y_true == 0 and y_pred == 0): 
         return 'TN'
