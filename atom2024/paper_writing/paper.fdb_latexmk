@@ -1,0 +1,16 @@
+# Fdb version 4
+["pdflatex"] 1730316522 "/Users/jayceepang/msse/capstone/atom2024/atom2024/paper_writing/paper.tex" "paper.pdf" "paper" 1730316523 2
+  "/Users/jayceepang/msse/capstone/atom2024/atom2024/paper_writing/paper.tex" 1730316522 5936 9dcc1aa16526ed00b4f99111213dc1cb ""
+  "/usr/local/texlive/2023/texmf-dist/tex/latex/base/article.cls" 1667332637 20144 d5ecf0a5140c8d8d8b72cbe86e320eff ""
+  "/usr/local/texlive/2023/texmf-dist/tex/latex/base/size10.clo" 1667332637 8448 c33a4e1cb35cee9b33c2b21033b73e39 ""
+  "/usr/local/texlive/2023/texmf-dist/web2c/texmf.cnf" 1677365944 40745 87bb86a62d462f93a1efc6b0c65c872e ""
+  "/usr/local/texlive/2023/texmf-var/web2c/pdftex/pdflatex.fmt" 1707717650 7883458 30568d4832af799a3caf38bdf3eea111 ""
+  "/usr/local/texlive/2023/texmf.cnf" 1678822455 577 1b2b1af17af2508fb20dd85783af4050 ""
+  "arxiv.sty" 0 -1 0 ""
+  "paper.aux" 0 -1 0 "pdflatex"
+  "paper.tex" 1730316522 5936 9dcc1aa16526ed00b4f99111213dc1cb ""
+  (generated)
+  "paper.aux"
+  "paper.log"
+  "paper.pdf"
+  (rewritten before read)
