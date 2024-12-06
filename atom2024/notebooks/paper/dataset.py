@@ -8,6 +8,19 @@ from sklearn.metrics import accuracy_score, balanced_accuracy_score,precision_sc
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
+def remove_duplicates(datapath=None, filename=None, df=None):
+    if datapath is not None: 
+        df = pd.read_csv(f'{datapath}{filename}')
+    duplicates = df.duplicated(subset=['base_rdkit_smiles'])
+    if duplicates.any():
+        print('Duplicate rows found:')
+        print(df[duplicates])
+        df_cleaned = df.drop_duplicates(subset=['base_rdkit_smiles'])
+        print(f'df size original: {df.shape}')
+        print(f'Removed duplicates. New df size: {df_cleaned.shape}')
+    else: 
+        df_cleaned = df
+    return df_cleaned
 
 def create_folds(df, num): 
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=num)
