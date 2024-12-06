@@ -1,7 +1,7 @@
 import pyforest
 import sys
 sys.path.append('/Users/jayceepang/msse/capstone/atom2024/atom2024/notebooks/paper/')
-from capstone.atom2024.atom2024.notebooks.paper.RF_functions import *
+from RF_functions import *
 from dataset import * 
 from imblearn.over_sampling import SMOTEN, ADASYN, SMOTE
 from sklearn.metrics import accuracy_score, balanced_accuracy_score,precision_score, f1_score, roc_auc_score, roc_curve, precision_recall_curve, auc, recall_score, confusion_matrix,matthews_corrcoef
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                 
             split_df = pd.read_csv(f'{data_path}{nek}_{feat}_none_scaled.csv')
             train=split_df[split_df['subset']=='train'] 
-            folded_train_df = create_folds(train,num) # 5 fold split (validation models) in this iteration 
+            folded_train_df = create_folds(train,numbers[0]) # 5 fold split (validation models) in this iteration 
             for fold in folds: # then use these 5 folds for train/validation 
                 kfold_df=label_subsets(folded_train_df, fold, 'test') 
                 if feat == 'MOE': 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
                     elif samp == 'none_scaled': 
                         sampled_df = featurized_df 
                         
-                    print(f'{nek} {feat} {samp} {fold} (it: {i})')
+                    print(f'{nek} {feat} {samp} {fold} (it: {0})')
                     id_cols = ['NEK', 'compound_id','base_rdkit_smiles','subset', 'active'] 
                     trainX, train_y, testX, test_y=get_arrays(file_path=None, root_name=None, df=sampled_df,nonfeat_cols=id_cols)
                     for rf in RF_types: 
@@ -91,13 +91,13 @@ if __name__ == '__main__':
                         test_df = gather_rf_results(model, testX, test_y)
                         print()
                         for this_df in [train_df,test_df]: 
-                            this_df['model'] = f'{nek} {feat} {samp} {fold} (it: {i}'
+                            this_df['model'] = f'{nek} {feat} {samp} {fold} (it: 0)'
                             this_df['NEK'] =nek
                             this_df['feat_type'] = feat
                             this_df['strategy'] = samp
                             this_df['RF_type'] = rf
                             this_df['fold']=fold 
-                            this_df['iteration']=i
+                            this_df['iteration']='testing JP/RS'
                         train_results.append(train_df.iloc[[0]][final_cols].values.flatten())
                         test_results.append(test_df.iloc[[0]][final_cols].values.flatten())
 
