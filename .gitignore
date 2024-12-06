@@ -1,5 +1,6 @@
 *.csv
-
+*.png
+*.xlsx
 *.pkl
 
 data
@@ -9,8 +10,4 @@ __pycache__
 __pycache__/
 .DS_Store
 
-atom2024/notebooks/balanceRFC_gridCV_NEK2_binding.pkl
-*.pkl
-*.pkl
-*.pkl
 *.pkl
