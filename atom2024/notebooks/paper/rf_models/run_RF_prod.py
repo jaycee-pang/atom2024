@@ -1,6 +1,4 @@
 import pyforest
-import sys
-sys.path.append('/Users/jayceepang/msse/capstone/atom2024/atom2024/notebooks/paper/')
 from updated_RF import *
 from imblearn.over_sampling import SMOTEN, ADASYN, SMOTE
 from sklearn.metrics import accuracy_score, balanced_accuracy_score,precision_score, f1_score, roc_auc_score, roc_curve, precision_recall_curve, auc, recall_score, confusion_matrix,matthews_corrcoef
@@ -71,8 +69,6 @@ if __name__ == '__main__':
                     model = rf_models(trainX, train_y, testX, test_y, rf, {}, True)  # make sure dict and doesn't go to default RF version
                     train_df = gather_rf_results(model, trainX, train_y)
                     test_df = gather_rf_results(model, testX, test_y)
-                    with open(f'{results_dir}{model_name}_prod.pkl', 'wb') as f: 
-                        pickle.dump(model,f)
                     print()
                     for this_df in [train_df,test_df]: 
                         this_df['model'] = model_name
