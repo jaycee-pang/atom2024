@@ -22,8 +22,8 @@ if __name__ == '__main__':
     numbers = rng.integers(low=0, high=1e6, size=10)  # Generate random numbers
     print(numbers)
     # for i,num in enumerate(numbers):
-    for nek in neks: 
-        for feat in feats: 
+    for nek in ['NEK2_binding']: 
+        for feat in ['MOE']: 
             split_df = pd.read_csv(f'{data_path}{nek}_{feat}_none_scaled.csv')
             train=split_df[split_df['subset']=='train'] 
             folded_train_df = create_folds(train,numbers[0]) # 5 fold split (validation models) in this iteration 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
                 else: 
                     featurized_df = featurize(feat_type='MFP', df=kfold_df,mfp_radius=2, nBits=2048)
 
-                for samp in ["none_scaled",'UNDER', 'SMOTE']:
+                for samp in ['SMOTE']:
                     if samp == 'UNDER': 
                         sampled_df = under_sampling(data_path=None,filename=None,df=featurized_df)  
                     elif samp == "SMOTE" or samp == "ADASYN": 
