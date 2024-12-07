@@ -12,13 +12,23 @@ import itertools
 from sklearn.metrics import precision_score, recall_score, roc_auc_score, matthews_corrcoef, balanced_accuracy_score, confusion_matrix, f1_score, roc_curve,precision_recall_curve, auc
 import sys
 sys.path.append('/Users/radhi/Desktop/GitHub/atom2024/atom2024/notebooks/')
+from functools import wraps
+from time import time
 def calculate_metrics(y_true, y_pred): 
     tp = np.sum((y_true == 1) & (y_pred == 1))
     tn = np.sum((y_true == 0) & (y_pred == 0))
     fp = np.sum((y_true == 0) & (y_pred == 1))
     fn = np.sum((y_true == 1) & (y_pred == 0))
     return tp, tn, fp, fn
-
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print('func:%r  took: %2.4f sec' % (f.__name__,  te-ts))
+        return result
+    return wrap
 # def calculate_metrics(y_true, y_pred): 
         
 #     # return tp, tn, fp, fn
@@ -49,6 +59,18 @@ def make_torch_tens_float(filepath=None, filename=None, rootname=None,df=None):
         trainy_df=train['active']
         testX_df=test.drop(columns=drop_cols)
         testy_df=test['active']
+    if df is not None: 
+        print("here")
+        train=df[df['subset']=='train']
+        test=df[df['subset']=='test']
+        drop_cols = ['NEK', 'subset','active', 'base_rdkit_smiles','compound_id']
+        if 'fold' in df.columns: 
+            drop_cols.append('fold')
+        trainX_df = train.drop(columns=drop_cols)
+        trainy_df=train['active']
+        testX_df=test.drop(columns=drop_cols)
+        testy_df=test['active']
+
 
     train_x_temp = trainX_df.to_numpy().astype("double") # double 
     test_x_temp = testX_df.to_numpy().astype("double") #double 
